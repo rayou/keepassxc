@@ -20,6 +20,7 @@
 #define KEEPASSX_DATABASEWIDGET_H
 
 #include <QFileSystemWatcher>
+#include <QListView>
 #include <QScopedPointer>
 #include <QStackedWidget>
 #include <QTimer>
@@ -29,6 +30,7 @@
 #include "gui/MessageWidget.h"
 #include "gui/csvImport/CsvImportWizard.h"
 #include "gui/entry/EntryModel.h"
+#include "gui/tag/TagModel.h"
 
 class DatabaseOpenWidget;
 class KeePass1OpenWidget;
@@ -174,6 +176,7 @@ public slots:
     void copyURL();
     void copyNotes();
     void copyAttribute(QAction* action);
+    void filterByTag(const QModelIndex& index);
     void showTotp();
     void showTotpKeyQrCode();
     void copyTotp();
@@ -278,6 +281,7 @@ private:
     QPointer<KeePass1OpenWidget> m_keepass1OpenWidget;
     QPointer<OpVaultOpenWidget> m_opVaultOpenWidget;
     QPointer<GroupView> m_groupView;
+    QPointer<QListView> m_tagView;
     QPointer<EntryView> m_entryView;
 
     QScopedPointer<Group> m_newGroup;
