@@ -198,15 +198,15 @@ void DatabaseSettingsDialog::pageChanged()
 {
     int pageIndex = m_ui->stackedWidget->currentIndex();
 
-    bool enabled = (pageIndex == Page::General && m_generalWidget->hasAdvancedMode());
+    bool visible = (pageIndex == Page::General && m_generalWidget->hasAdvancedMode());
 
     if (Page::Security == pageIndex) {
         int tabIndex = m_securityTabWidget->currentIndex();
-        enabled = (tabIndex == 0 && m_databaseKeyWidget->hasAdvancedMode());
-        enabled |= (tabIndex == 1 && m_encryptionWidget->hasAdvancedMode());
+        visible = (tabIndex == 0 && m_databaseKeyWidget->hasAdvancedMode());
+        visible |= (tabIndex == 1 && m_encryptionWidget->hasAdvancedMode());
     }
 
-    m_ui->advancedSettingsToggle->setEnabled(enabled);
+    m_ui->advancedSettingsToggle->setVisible(visible);
 }
 
 void DatabaseSettingsDialog::toggleAdvancedMode(bool advanced)
