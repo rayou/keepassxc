@@ -11,6 +11,13 @@
    </rect>
   </property>
   <layout class="QVBoxLayout" name="_2">
+    <item>
+        <widget class="QCheckBox" name="advancedSettingsToggle">
+         <property name="text">
+          <string>Advanced Settings</string>
+         </property>
+        </widget>
+       </item>
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
      <property name="currentIndex">
