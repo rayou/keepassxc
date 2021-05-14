@@ -376,11 +376,11 @@ void DatabaseSettingsWidgetEncryption::setAdvancedMode(bool advanced)
 
     if (advanced) {
         loadKdfParameters();
-        m_ui->stackedWidget->setCurrentIndex(1);
     } else {
         m_ui->compatibilitySelection->setCurrentIndex(m_db->kdf()->uuid() == KeePass2::KDF_AES_KDBX3 ? KDBX3 : KDBX4);
-        m_ui->stackedWidget->setCurrentIndex(0);
     }
+
+    m_ui->advancedSettings->setVisible(advanced);
     config()->set(Config::GUI_AdvancedSettings, advanced);
 }
 
