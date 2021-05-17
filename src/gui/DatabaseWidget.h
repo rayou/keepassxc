@@ -261,6 +261,7 @@ private:
     bool confirmDeleteEntries(QList<Entry*> entries, bool permanent);
     void performIconDownloads(const QList<Entry*>& entries, bool force = false);
     bool performSave(QString& errorMessage, const QString& fileName = {});
+    void restoreTagSidePanelSelection();
 
     QSharedPointer<Database> m_db;
 
@@ -297,6 +298,9 @@ private:
     EntrySearcher* m_EntrySearcher;
     QString m_lastSearchText;
     bool m_searchLimitGroup;
+
+    // Tag filtering state
+    QString m_lastTagSelection;
 
     // Autoreload
     bool m_blockAutoSave;
