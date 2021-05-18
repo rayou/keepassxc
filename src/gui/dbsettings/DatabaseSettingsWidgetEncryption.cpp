@@ -381,6 +381,7 @@ void DatabaseSettingsWidgetEncryption::setAdvancedMode(bool advanced)
     }
 
     m_ui->advancedSettings->setVisible(advanced);
+    m_ui->decryptionTimeSlider->setEnabled(!advanced);
     config()->set(Config::GUI_AdvancedSettings, advanced);
 }
 
