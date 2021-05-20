@@ -72,4 +72,5 @@ protected:
 private:
     struct Impl;
     std::unique_ptr<Impl> impl;
+    bool isAcceptableInput(const QKeyEvent* event);
 };

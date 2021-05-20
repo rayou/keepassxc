@@ -318,7 +318,6 @@ target_link_libraries(keepassx_core
         Qt5::Concurrent
         Qt5::Network
         Qt5::Widgets
-        Qt5::GuiPrivate
         ${BOTAN2_LIBRARIES}
         ${YUBIKEY_LIBRARIES}
         ${ZXCVBN_LIBRARIES}
