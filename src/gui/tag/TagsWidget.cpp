@@ -2,6 +2,7 @@
   MIT License
 
   Copyright (c) 2019 Nicolai Trandafil
+  Modified in 2021 by the KeePassXC Team <team@keepassxc.org>
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -59,10 +60,11 @@ namespace
     constexpr int rightmargin = 1;
 
     constexpr int tag_spacing = 3;
-    constexpr int tag_inner_left_padding = 3;
+    constexpr int tag_inner_left_padding = 5;
     constexpr int tag_inner_right_padding = 4;
-    constexpr int tag_cross_width = 4;
-    constexpr int tag_cross_spacing = 2;
+    constexpr int tag_cross_width = 5;
+    constexpr float tag_cross_radius = tag_cross_width / 2;
+    constexpr int tag_cross_padding = 5;
 
     struct Tag
     {
@@ -155,8 +157,8 @@ struct TagsWidget::Impl
 
     inline QRectF crossRect(QRectF const& r) const
     {
-        QRectF cross(QPointF{0, 0}, QSizeF{tag_cross_width, tag_cross_width});
-        cross.moveCenter(QPointF(r.right() - tag_cross_width, r.center().y()));
+        QRectF cross(QPointF{0, 0}, QSizeF{tag_cross_width + tag_cross_padding * 2, r.top() - r.bottom()});
+        cross.moveCenter(QPointF(r.right() - tag_cross_radius - tag_cross_padding, r.center().y()));
         return cross;
     }
 
@@ -178,7 +180,8 @@ struct TagsWidget::Impl
             // drag tag rect
             QColor const blue(0, 96, 100, 150);
             QPainterPath path;
-            path.addRoundedRect(i_r, 4, 4);
+            auto cornerRadius = 4;
+            path.addRoundedRect(i_r, cornerRadius, cornerRadius);
             p.fillPath(path, blue);
 
             // draw text
@@ -187,14 +190,24 @@ struct TagsWidget::Impl
             // calc cross rect
             auto const i_cross_r = crossRect(i_r);
 
+            QPainterPath crossRectBg1, crossRectBg2;
+            crossRectBg1.addRoundedRect(i_cross_r, cornerRadius, cornerRadius);
+            // cover left rounded corners
+            crossRectBg2.addRect(
+                i_cross_r.left(), i_cross_r.bottom(), tag_cross_radius, i_cross_r.top() - i_cross_r.bottom());
+            p.fillPath(crossRectBg1, QColorConstants::Cyan);
+            p.fillPath(crossRectBg2, QColorConstants::Cyan);
+
             QPen pen = p.pen();
             pen.setWidth(2);
 
             p.save();
             p.setPen(pen);
             p.setRenderHint(QPainter::Antialiasing);
-            p.drawLine(QLineF(i_cross_r.topLeft(), i_cross_r.bottomRight()));
-            p.drawLine(QLineF(i_cross_r.bottomLeft(), i_cross_r.topRight()));
+            p.drawLine(QLineF(i_cross_r.center() - QPointF(tag_cross_radius, tag_cross_radius),
+                              i_cross_r.center() + QPointF(tag_cross_radius, tag_cross_radius)));
+            p.drawLine(QLineF(i_cross_r.center() - QPointF(-tag_cross_radius, tag_cross_radius),
+                              i_cross_r.center() + QPointF(-tag_cross_radius, tag_cross_radius)));
             p.restore();
         }
     }
@@ -231,7 +244,8 @@ struct TagsWidget::Impl
             const auto i_width = FONT_METRICS_WIDTH(ifce->fontMetrics(), it->text);
             QRect i_r(lt, QSize(i_width, height));
             i_r.translate(tag_inner_left_padding, 0);
-            i_r.adjust(-tag_inner_left_padding, 0, tag_inner_right_padding + tag_cross_spacing + tag_cross_width, 0);
+            i_r.adjust(
+                -tag_inner_left_padding, 0, tag_inner_right_padding + tag_cross_padding * 2 + tag_cross_width, 0);
             it->rect = i_r;
             lt.setX(i_r.right() + tag_spacing);
         }
