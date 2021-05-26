@@ -55,6 +55,8 @@ public:
     /// Get tags
     std::vector<QString> tags() const;
 
+    void setReadOnly(bool readOnly);
+
 signals:
     void tagsEdited();
 
@@ -73,4 +75,5 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl;
     bool isAcceptableInput(const QKeyEvent* event);
+    bool m_readOnly;
 };

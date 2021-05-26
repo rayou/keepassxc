@@ -60,8 +60,7 @@ namespace
     constexpr int rightmargin = 1;
 
     constexpr int tag_spacing = 3;
-    constexpr int tag_inner_left_padding = 5;
-    constexpr int tag_inner_right_padding = 4;
+    constexpr int tag_inner_name_padding = 5;
     constexpr int tag_cross_width = 5;
     constexpr float tag_cross_radius = tag_cross_width / 2;
     constexpr int tag_cross_padding = 5;
@@ -140,6 +139,7 @@ struct TagsWidget::Impl
         , blink_status(true)
         , select_start(0)
         , select_size(0)
+        , cross_deleter(true)
         , completer(std::make_unique<QCompleter>())
     {
     }
@@ -164,8 +164,10 @@ struct TagsWidget::Impl
 
     bool inCrossArea(size_t tag_index, QPoint const& point) const
     {
-        return crossRect(tags[tag_index].rect).adjusted(-2, 0, 0, 0).translated(-hscroll, 0).contains(point)
-               && (!cursorVisible() || tag_index != editing_index);
+        return cross_deleter
+                   ? crossRect(tags[tag_index].rect).adjusted(-2, 0, 0, 0).translated(-hscroll, 0).contains(point)
+                         && (!cursorVisible() || tag_index != editing_index)
+                   : false;
     }
 
     template <class It> void drawTagsWidget(QPainter& p, std::pair<It, It> range) const
@@ -174,7 +176,7 @@ struct TagsWidget::Impl
             QRect const& i_r = it->rect.translated(-hscroll, 0);
             auto const text_pos =
                 i_r.topLeft()
-                + QPointF(tag_inner_left_padding,
+                + QPointF(tag_inner_name_padding,
                           ifce->fontMetrics().ascent() + ((i_r.height() - ifce->fontMetrics().height()) / 2));
 
             // drag tag rect
@@ -187,28 +189,30 @@ struct TagsWidget::Impl
             // draw text
             p.drawText(text_pos, it->text);
 
-            // calc cross rect
-            auto const i_cross_r = crossRect(i_r);
+            if (cross_deleter) {
+                // calc cross rect
+                auto const i_cross_r = crossRect(i_r);
 
-            QPainterPath crossRectBg1, crossRectBg2;
-            crossRectBg1.addRoundedRect(i_cross_r, cornerRadius, cornerRadius);
-            // cover left rounded corners
-            crossRectBg2.addRect(
-                i_cross_r.left(), i_cross_r.bottom(), tag_cross_radius, i_cross_r.top() - i_cross_r.bottom());
-            p.fillPath(crossRectBg1, QColorConstants::Cyan);
-            p.fillPath(crossRectBg2, QColorConstants::Cyan);
+                QPainterPath crossRectBg1, crossRectBg2;
+                crossRectBg1.addRoundedRect(i_cross_r, cornerRadius, cornerRadius);
+                // cover left rounded corners
+                crossRectBg2.addRect(
+                    i_cross_r.left(), i_cross_r.bottom(), tag_cross_radius, i_cross_r.top() - i_cross_r.bottom());
+                p.fillPath(crossRectBg1, QColorConstants::Cyan);
+                p.fillPath(crossRectBg2, QColorConstants::Cyan);
 
-            QPen pen = p.pen();
-            pen.setWidth(2);
+                QPen pen = p.pen();
+                pen.setWidth(2);
 
-            p.save();
-            p.setPen(pen);
-            p.setRenderHint(QPainter::Antialiasing);
-            p.drawLine(QLineF(i_cross_r.center() - QPointF(tag_cross_radius, tag_cross_radius),
-                              i_cross_r.center() + QPointF(tag_cross_radius, tag_cross_radius)));
-            p.drawLine(QLineF(i_cross_r.center() - QPointF(-tag_cross_radius, tag_cross_radius),
-                              i_cross_r.center() + QPointF(-tag_cross_radius, tag_cross_radius)));
-            p.restore();
+                p.save();
+                p.setPen(pen);
+                p.setRenderHint(QPainter::Antialiasing);
+                p.drawLine(QLineF(i_cross_r.center() - QPointF(tag_cross_radius, tag_cross_radius),
+                                  i_cross_r.center() + QPointF(tag_cross_radius, tag_cross_radius)));
+                p.drawLine(QLineF(i_cross_r.center() - QPointF(-tag_cross_radius, tag_cross_radius),
+                                  i_cross_r.center() + QPointF(-tag_cross_radius, tag_cross_radius)));
+                p.restore();
+            }
         }
     }
 
@@ -243,9 +247,13 @@ struct TagsWidget::Impl
             // calc text rect
             const auto i_width = FONT_METRICS_WIDTH(ifce->fontMetrics(), it->text);
             QRect i_r(lt, QSize(i_width, height));
-            i_r.translate(tag_inner_left_padding, 0);
-            i_r.adjust(
-                -tag_inner_left_padding, 0, tag_inner_right_padding + tag_cross_padding * 2 + tag_cross_width, 0);
+            i_r.translate(tag_inner_name_padding, 0);
+            if (cross_deleter) {
+                i_r.adjust(
+                    -tag_inner_name_padding, 0, tag_inner_name_padding + tag_cross_padding * 2 + tag_cross_width, 0);
+            } else {
+                i_r.adjust(-tag_inner_name_padding, 0, tag_inner_name_padding, 0);
+            }
             it->rect = i_r;
             lt.setX(i_r.right() + tag_spacing);
         }
@@ -253,8 +261,8 @@ struct TagsWidget::Impl
 
     void calcEditorRect(QPoint& lt, int height)
     {
-        auto const w = FONT_METRICS_WIDTH(ifce->fontMetrics(), text_layout.text()) + tag_inner_left_padding
-                       + tag_inner_right_padding;
+        auto const w = FONT_METRICS_WIDTH(ifce->fontMetrics(), text_layout.text()) + tag_inner_name_padding
+                       + tag_inner_name_padding;
         currentRect() = QRect(lt, QSize(w, height));
         lt += QPoint(w + tag_spacing, 0);
     }
@@ -481,6 +489,7 @@ struct TagsWidget::Impl
     QTextLayout text_layout;
     int select_start;
     int select_size;
+    bool cross_deleter;
     std::unique_ptr<QCompleter> completer;
     int hscroll{0};
 };
@@ -488,6 +497,7 @@ struct TagsWidget::Impl
 TagsWidget::TagsWidget(QWidget* parent)
     : QWidget(parent)
     , impl(std::make_unique<Impl>(this))
+    , m_readOnly(false)
 {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     setFocusPolicy(Qt::StrongFocus);
@@ -498,6 +508,22 @@ TagsWidget::TagsWidget(QWidget* parent)
     impl->setupCompleter();
     impl->setCursorVisible(hasFocus());
     impl->updateDisplayText();
+}
+
+void TagsWidget::setReadOnly(bool readOnly)
+{
+    m_readOnly = readOnly;
+    if (m_readOnly) {
+        setFocusPolicy(Qt::NoFocus);
+        setCursor(Qt::ArrowCursor);
+        setAttribute(Qt::WA_InputMethodEnabled, false);
+        impl->cross_deleter = false;
+    } else {
+        setFocusPolicy(Qt::StrongFocus);
+        setCursor(Qt::IBeamCursor);
+        setAttribute(Qt::WA_InputMethodEnabled, true);
+        impl->cross_deleter = true;
+    }
 }
 
 TagsWidget::~TagsWidget() = default;
@@ -535,7 +561,9 @@ void TagsWidget::paintEvent(QPaintEvent*)
     }();
 
     // draw frame
-    style()->drawPrimitive(QStyle::PE_PanelLineEdit, &panel, &p, this);
+    if (!m_readOnly) {
+        style()->drawPrimitive(QStyle::PE_PanelLineEdit, &panel, &p, this);
+    }
 
     // clip
     auto const rect = impl->cRect();
@@ -544,7 +572,7 @@ void TagsWidget::paintEvent(QPaintEvent*)
     if (impl->cursorVisible()) {
         // not terminated tag pos
         auto const& r = impl->currentRect();
-        auto const& txt_p = r.topLeft() + QPointF(tag_inner_left_padding, ((r.height() - fontMetrics().height()) / 2));
+        auto const& txt_p = r.topLeft() + QPointF(tag_inner_name_padding, ((r.height() - fontMetrics().height()) / 2));
 
         // scroll
         impl->calcHScroll(r);
@@ -782,13 +810,15 @@ std::vector<QString> TagsWidget::tags() const
 
 void TagsWidget::mouseMoveEvent(QMouseEvent* event)
 {
-    for (size_t i = 0; i < impl->tags.size(); ++i) {
-        if (impl->inCrossArea(i, event->pos())) {
-            setCursor(Qt::ArrowCursor);
-            return;
+    if (!m_readOnly) {
+        for (size_t i = 0; i < impl->tags.size(); ++i) {
+            if (impl->inCrossArea(i, event->pos())) {
+                setCursor(Qt::ArrowCursor);
+                return;
+            }
         }
+        setCursor(Qt::IBeamCursor);
     }
-    setCursor(Qt::IBeamCursor);
 }
 
 bool TagsWidget::isAcceptableInput(const QKeyEvent* event)
